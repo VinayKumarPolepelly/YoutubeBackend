@@ -153,8 +153,8 @@ const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,
     {
-      $set: {
-        refreshToken: undefined,
+      $unset: {
+        refreshToken: 1, //this remove the fields from documents
       },
     },
     {
@@ -262,7 +262,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .jsn(new ApiResponse(200, 'Accunt details updated successfully'));
+    .json(new ApiResponse(200, 'Accunt details updated successfully'));
 });
 
 const updateUserAvatar = asyncHandler(async (req, res) => {
@@ -336,18 +336,18 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     },
     {
       $lookup: {
-        from: 'Subscription',
+        from: 'subscriptions',
         localField: '_id',
         foreignField: 'channel',
-        as: 'Subscribers',
+        as: 'subscribers',
       },
     },
     {
       $lookup: {
-        from: 'Subscription',
+        from: 'subscriptions',
         localField: '_id',
         foreignField: 'subscriber',
-        as: 'SubscribedTo',
+        as: 'subscribedTo',
       },
     },
     {
@@ -360,7 +360,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         },
         isSubscribed: {
           $cond: {
-            if: { $in: [req.user?._id, 'subscribers'] },
+            if: { $in: [req.user?._id, '$subscribers.subscriber'] },
             then: true,
             else: false,
           },
@@ -369,7 +369,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     },
     {
       $project: {
-        fullname: 1,
+        fullName: 1,
         username: 1,
         subscribersCount: 1,
         channelsSubscribedToCount: 1,
@@ -387,7 +387,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, 'User channel fetched successfully'));
+    .json(new ApiResponse(200, channel, 'User channel fetched successfully'));
 });
 
 const getWatchHistory = asyncHandler(async (req, res) => {
